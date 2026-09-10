@@ -3,6 +3,7 @@ import { ContextService } from './context.service';
 import { MatToolbar, MatToolbarRow } from '@angular/material/toolbar';
 import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
+import { DomSanitizer } from '@angular/platform-browser';
 
 
 @Component({
@@ -40,7 +41,7 @@ import { MatTooltip } from '@angular/material/tooltip';
         >
           <span class="material-symbols-outlined">save</span>
         </button>
-        <button matIconButton disabled>
+        <button matIconButton class="material-btn" disabled>
           <span class="material-symbols-outlined" style="transform: rotate(90deg);">
             horizontal_rule
           </span>
@@ -63,26 +64,31 @@ import { MatTooltip } from '@angular/material/tooltip';
           </div>
         </button>
 
-        <button matIconButton disabled>
+        <button matIconButton class="material-btn" disabled>
           <span class="material-symbols-outlined" style="transform: rotate(90deg);">
             horizontal_rule
           </span>
         </button>
 
-        <button matIconButton (click)="context.addNewSubtitle()">
+        <button matIconButton class="material-btn" (click)="context.addNewSubtitle()">
           <span class="material-symbols-outlined"> variable_add </span>
         </button>
-        <button matIconButton (click)="context.removeSelectedSubtitle()">
+        <button matIconButton class="material-btn" (click)="context.removeSelectedSubtitle()">
           <span class="material-symbols-outlined">variable_remove</span>
         </button>
 
-        <button matIconButton disabled>
+        <button matIconButton class="material-btn" disabled>
           <span class="material-symbols-outlined" style="transform: rotate(90deg);">
             horizontal_rule
           </span>
         </button>
 
-        <button matIconButton matTooltip="Reset view" class="material-btn" (click)="context.restart()">
+        <button
+          matIconButton
+          matTooltip="Reset view"
+          class="material-btn"
+          (click)="context.restart()"
+        >
           <span class="material-symbols-outlined">restart_alt</span>
         </button>
       </mat-toolbar-row>
@@ -91,6 +97,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 })
 export class MainToolbarComponent {
   context = inject(ContextService);
+  #sanitizer = inject(DomSanitizer);
 
   onSubtitleFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -107,8 +114,10 @@ export class MainToolbarComponent {
 
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      this.context.load_waveform(file.name);
+      this.context.load_video_file(file.name);
       input.value = '';
+      const objectUrl = URL.createObjectURL(file);
+      this.context.setVideoUrl(this.#sanitizer.bypassSecurityTrustUrl(objectUrl));
     }
   }
 }

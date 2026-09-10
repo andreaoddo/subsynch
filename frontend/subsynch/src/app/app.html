@@ -1,5 +1,14 @@
-<app-main-toolbar/>
-<app-waveform-visualizer/>
-<app-subtitle-editor/>
-<app-subtitle-table/>
+<app-main-toolbar />
+<app-waveform-visualizer />
+
+<div class="top-controls">
+  <app-subtitle-editor />
+</div>
+<div class="split-layout">
+  <div class="left-panel">
+    <app-subtitle-table></app-subtitle-table>
+  </div>
+  <app-video-player class="right-panel"></app-video-player>
+</div>
+
 <router-outlet />

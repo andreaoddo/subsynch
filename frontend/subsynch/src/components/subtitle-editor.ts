@@ -23,6 +23,10 @@ import { MatTooltip } from '@angular/material/tooltip';
         font-weight: bold;
         color: rgb(0, 92, 187);
       }
+
+      .action-button {
+        box-shadow: #aaa 1px 1px 3px;
+      }
     `,
   ],
   template: `
@@ -54,20 +58,26 @@ import { MatTooltip } from '@angular/material/tooltip';
         </span>
       </div>
       <div
-        style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px;"
+        style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 15px; padding-top: 5px;"
       >
         <div class="sub-label">Shift selection</div>
         <div>
-          <button matButton matTooltip="-100ms" class="material-btn" (click)="shift(-100)">
+          <button
+            matButton
+            matTooltip="-100ms"
+            style="box-shadow: #aaa 1px 1px 3px"
+            class="material-btn action-button"
+            (click)="shift(-100)"
+          >
             <span class="material-symbols-outlined">keyboard_double_arrow_left</span>
           </button>
-          <button matButton matTooltip="-10ms" class="material-btn" (click)="shift(-10)">
+          <button matButton matTooltip="-10ms" class="material-btn action-button" (click)="shift(-10)">
             <span class="material-symbols-outlined">keyboard_arrow_left</span>
           </button>
-          <button matButton matTooltip="+10ms" class="material-btn" (click)="shift(10)">
+          <button matButton matTooltip="+10ms" class="material-btn action-button" (click)="shift(10)">
             <span class="material-symbols-outlined">keyboard_arrow_right</span>
           </button>
-          <button matButton matTooltip="+100ms" class="material-btn" (click)="shift(100)">
+          <button matButton matTooltip="+100ms" class="material-btn action-button" (click)="shift(100)">
             <span class="material-symbols-outlined">keyboard_double_arrow_right</span>
           </button>
         </div>

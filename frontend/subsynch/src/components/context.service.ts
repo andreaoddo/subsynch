@@ -1,6 +1,7 @@
 import { computed, effect, inject, Injectable, model, NgZone, Signal, signal } from '@angular/core';
 import { SelectionRange, Subtitle, SubtitleAndId } from './dto';
 import { v4 as uuid } from 'uuid';
+import { SafeUrl } from '@angular/platform-browser';
 
 
 @Injectable({ providedIn: 'root' })
@@ -14,6 +15,7 @@ export class ContextService {
   #videoFileName = signal<string | null>(null);
   #currentTime = signal<number>(0);
   #selectionRange = signal<{ start: number; end: number } | null>(null);
+  #videoUrl = signal<SafeUrl | null>(null);
 
   subtitles = this.#subtitles.asReadonly();
   waveform = this.#waveform.asReadonly();
@@ -23,6 +25,7 @@ export class ContextService {
   currentTime = this.#currentTime.asReadonly();
   selectionRange = this.#selectionRange.asReadonly();
   // selectedSubtitle = this.#selectedSubtitle.asReadonly();
+  videoUrl = this.#videoUrl.asReadonly();
 
   selectedSubtitle = computed(() => {
     const id = this.selectedSubtitleId();
@@ -69,7 +72,7 @@ export class ContextService {
     }
   }
 
-  async load_waveform(filename: string) {
+  async load_video_file(filename: string) {
     this.#videoFileName.set(filename);
     let wf = await (window as any).pywebview.api.load_waveform(filename);
     this.#zone.run(() => {
@@ -86,6 +89,7 @@ export class ContextService {
     this.#videoFileName.set(null);
     this.#currentTime.set(0);
     this.#selectionRange.set(null);
+    this.#videoUrl.set(null);
   }
 
   addNewSubtitle() {
@@ -129,7 +133,7 @@ export class ContextService {
   }
 
   setCurrentTime(currentTime: number) {
-    this.#currentTime.set(currentTime);
+    this.#currentTime.set(Math.round(currentTime));
   }
 
   updateSubtitle(id: string, fromTime: number, toTime: number, text: string) {
@@ -143,5 +147,9 @@ export class ContextService {
   updateCurrentSubtitle(fromTime: number, toTime: number, text: string) {
     if(!this.selectedSubtitleId()) return;
     this.updateSubtitle(this.selectedSubtitleId()!, fromTime, toTime, text);
+  }
+
+  setVideoUrl(videoUrl: SafeUrl) {
+    this.#videoUrl.set(videoUrl);
   }
 }

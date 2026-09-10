@@ -253,6 +253,35 @@ export class WaveformVisualizerComponent implements AfterViewInit, OnDestroy {
         });
       }
     });
+
+    effect(() => {
+      const currentTimeMs = this.context.currentTime();
+      const viewport = this.viewportRef()?.nativeElement;
+
+      if (!viewport) return;
+
+      const containerW = this.containerWidth();
+      if (containerW <= 0) return;
+
+      const pps = this.pixelsPerSecond();
+      const playheadX = (currentTimeMs / 1000.0) * pps;
+
+      const scrollLeft = viewport.scrollLeft;
+      const rightEdge = scrollLeft + containerW;
+
+      if (playheadX > rightEdge) {
+        viewport.scrollTo({
+          left: playheadX,
+          behavior: 'smooth',
+        });
+      }
+      else if (playheadX < scrollLeft) {
+        viewport.scrollTo({
+          left: playheadX,
+          behavior: 'smooth',
+        });
+      }
+    });
   }
 
   ngAfterViewInit(): void {
