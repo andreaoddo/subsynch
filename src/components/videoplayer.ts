@@ -71,6 +71,15 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
         display: flex;
         gap: 8px;
       }
+
+      ::ng-deep video::cue {
+        color: white; /* Text color */
+        background-color: rgba(0, 0, 0, 0);
+        font-family: 'Arial', sans-serif;
+        font-size: 1.5rem;
+        font-weight: bold;
+        text-shadow: 2px 2px 4px #000000; /* Outline effect */
+      }
     `,
   ],
 })
