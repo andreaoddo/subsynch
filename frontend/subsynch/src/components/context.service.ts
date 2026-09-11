@@ -16,6 +16,7 @@ export class ContextService {
   #currentTime = signal<number>(0);
   #selectionRange = signal<{ start: number; end: number } | null>(null);
   #videoUrl = signal<SafeUrl | null>(null);
+  #waveformLoading = signal<boolean>(false);
 
   subtitles = this.#subtitles.asReadonly();
   waveform = this.#waveform.asReadonly();
@@ -26,6 +27,7 @@ export class ContextService {
   selectionRange = this.#selectionRange.asReadonly();
   // selectedSubtitle = this.#selectedSubtitle.asReadonly();
   videoUrl = this.#videoUrl.asReadonly();
+  waveformLoading = this.#waveformLoading.asReadonly();
 
   selectedSubtitle = computed(() => {
     const id = this.selectedSubtitleId();
@@ -49,15 +51,14 @@ export class ContextService {
     });
   }
 
-  async load_srt(filename: string) {
-    this.#subtitleFileName.set(filename);
-    let subs: Subtitle[] = await (window as any).pywebview.api.load_srt(filename);
-    let subsAndId: SubtitleAndId[] = subs
-      .sort((a, b) => a.fromTime - b.fromTime)
-      .map((s) => {
-        return { id: uuid(), subtitle: s };
-      });
-    this.#zone.run(() => {
+  async load_srt(file: File) {
+    this.#subtitleFileName.set(file.name);
+    this.#parse_srt(file).then(subtitles => {
+      let subsAndId: SubtitleAndId[] = subtitles
+        .sort((a, b) => a.fromTime - b.fromTime)
+        .map((s) => {
+          return { id: uuid(), subtitle: s };
+        });
       this.#subtitles.set(subsAndId);
     });
   }
@@ -72,12 +73,16 @@ export class ContextService {
     }
   }
 
-  async load_video_file(filename: string) {
-    this.#videoFileName.set(filename);
-    let wf = await (window as any).pywebview.api.load_waveform(filename);
-    this.#zone.run(() => {
-      this.#waveform.set(wf);
-      console.log('Waveform loaded');
+  async load_video_file(file: File) {
+    this.#videoFileName.set(file.name);
+
+    this.#waveformLoading.set(true);
+
+    this.#extractWaveform(file).then((res) => {
+      this.#waveform.set(res);
+
+      this.#waveformLoading.set(false);
+
     });
   }
 
@@ -90,6 +95,7 @@ export class ContextService {
     this.#currentTime.set(0);
     this.#selectionRange.set(null);
     this.#videoUrl.set(null);
+    this.#waveformLoading.set(false);
   }
 
   addNewSubtitle() {
@@ -151,5 +157,76 @@ export class ContextService {
 
   setVideoUrl(videoUrl: SafeUrl) {
     this.#videoUrl.set(videoUrl);
+  }
+
+  async #extractWaveform(file: File, binMs: number = 10): Promise<number[]> {
+    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({
+      sampleRate: 44100,
+    });
+
+    const arrayBuffer = await file.arrayBuffer();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+    // TODO: Find strategy to extract "best" channel?
+    const channelData = audioBuffer.getChannelData(0);
+
+    // TODO: Check whether this is correct, might there be drifting if samplesPerBin is rounded too much?
+    const samplesPerBin = Math.floor(audioBuffer.sampleRate * (binMs / 1000.0));
+    const numBins = Math.floor(channelData.length / samplesPerBin);
+
+    const envelope = new Float32Array(numBins);
+
+    for (let i = 0; i < numBins; i++) {
+      let sum = 0;
+      const offset = i * samplesPerBin;
+
+      for (let j = 0; j < samplesPerBin; j++) {
+        sum += Math.abs(channelData[offset + j]);
+      }
+
+      envelope[i] = sum / samplesPerBin;
+    }
+
+    audioCtx.close();
+
+    return Array.from(envelope);
+  }
+
+  async #parse_srt(file: File): Promise<Subtitle[]> {
+    let subs = [];
+    const content = await file.text();
+    const pattern = /(\d{2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})[,.](\d{3})/;
+
+
+    const blocks = content.trim().split(/\r?\n\r?\n/);
+
+    for (const block of blocks) {
+      const lines = block.split(/\r?\n/);
+
+      if (lines.length < 3) {
+        throw new Error('Invalid format');
+      }
+
+      const match = lines[1].match(pattern);
+      if (!match) {
+        throw new Error(`Invalid SRT timestamp format: '${lines[1]}'`);
+      }
+
+      const startMs = this.#toMs(match[1], match[2], match[3], match[4]);
+      const endMs = this.#toMs(match[5], match[6], match[7], match[8]);
+      const text = lines.slice(2).join('\n');
+
+      subs.push({
+        fromTime: startMs,
+        toTime: endMs,
+        text: text,
+      });
+    }
+
+    return subs;
+  }
+
+  #toMs(h: string, m: string, s: string, ms: string): number {
+    return parseInt(h, 10) * 3_600_000 + parseInt(m, 10) * 60_000 + parseInt(s, 10) * 1_000 + parseInt(ms, 10);
   }
 }

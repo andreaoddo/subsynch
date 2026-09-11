@@ -20,50 +20,58 @@ import { ContextService } from './context.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div #viewport class="viewport" (wheel)="onWheel($event)">
-      <div class="track" [style.width.px]="totalWidth()" (mousedown)="onTrackMouseDown($event)">
-        <canvas #waveformCanvas></canvas>
+    <div class="visualizer-wrapper">
+      @if (this.context.waveformLoading()) {
+        <div class="spinner-overlay">
+          <div class="spinner"></div>
+        </div>
+      }
 
-        @if (context.selectionRange()) {
+      <div #viewport class="viewport" (wheel)="onWheel($event)">
+        <div class="track" [style.width.px]="totalWidth()" (mousedown)="onTrackMouseDown($event)">
+          <canvas #waveformCanvas></canvas>
+
+          @if (context.selectionRange()) {
+            <div
+              class="selection-box"
+              [style.left.px]="(context.selectionRange()!.start * pixelsPerSecond()) / 1000.0"
+              [style.width.px]="
+                ((context.selectionRange()!.end - context.selectionRange()!.start) *
+                  pixelsPerSecond()) /
+                1000.0
+              "
+              [style.height.px]="waveformHeight()"
+            ></div>
+          }
+
+          @for (sub of context.subtitles(); track $index) {
+            <div
+              class="subtitle-box"
+              [class.selected]="sub.id === context.selectedSubtitleId()"
+              [style.left.px]="(sub.subtitle.fromTime / 1000) * pixelsPerSecond()"
+              [style.width.px]="
+                ((sub.subtitle.toTime - sub.subtitle.fromTime) / 1000) * pixelsPerSecond()
+              "
+              [style.height.px]="waveformHeight()"
+              (click)="onSubtitleClick($event, sub.id)"
+            >
+              <div
+                class="resize-handle left"
+                (mousedown)="onResizeStart($event, sub.id, 'left')"
+              ></div>
+              <span class="subtitle-text">{{ sub.subtitle.text }}</span>
+              <div
+                class="resize-handle right"
+                (mousedown)="onResizeStart($event, sub.id, 'right')"
+              ></div>
+            </div>
+          }
+
           <div
-            class="selection-box"
-            [style.left.px]="(context.selectionRange()!.start * pixelsPerSecond()) / 1000.0"
-            [style.width.px]="
-              ((context.selectionRange()!.end - context.selectionRange()!.start) *
-                pixelsPerSecond()) /
-              1000.0
-            "
-            [style.height.px]="waveformHeight()"
+            class="playhead"
+            [style.left.px]="(context.currentTime() * pixelsPerSecond()) / 1000.0"
           ></div>
-        }
-
-        @for (sub of context.subtitles(); track $index) {
-          <div
-            class="subtitle-box"
-            [class.selected]="sub.id === context.selectedSubtitleId()"
-            [style.left.px]="(sub.subtitle.fromTime / 1000) * pixelsPerSecond()"
-            [style.width.px]="
-              ((sub.subtitle.toTime - sub.subtitle.fromTime) / 1000) * pixelsPerSecond()
-            "
-            [style.height.px]="waveformHeight()"
-            (click)="onSubtitleClick($event, sub.id)"
-          >
-            <div
-              class="resize-handle left"
-              (mousedown)="onResizeStart($event, sub.id, 'left')"
-            ></div>
-            <span class="subtitle-text">{{ sub.subtitle.text }}</span>
-            <div
-              class="resize-handle right"
-              (mousedown)="onResizeStart($event, sub.id, 'right')"
-            ></div>
-          </div>
-        }
-
-        <div
-          class="playhead"
-          [style.left.px]="(context.currentTime() * pixelsPerSecond()) / 1000.0"
-        ></div>
+        </div>
       </div>
     </div>
   `,
@@ -193,6 +201,43 @@ import { ContextService } from './context.service';
         pointer-events: none; /* Let clicks pass through if dragging again */
         z-index: 5; /* Below subtitles, above canvas */
       }
+
+      .visualizer-wrapper {
+        position: relative;
+        width: 100%;
+      }
+
+      .spinner-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(26, 26, 26, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        backdrop-filter: blur(2px);
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(0, 229, 255, 0.2);
+        border-top: 4px solid #00e5ff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
     `,
   ],
 })
@@ -274,8 +319,7 @@ export class WaveformVisualizerComponent implements AfterViewInit, OnDestroy {
           left: playheadX,
           behavior: 'smooth',
         });
-      }
-      else if (playheadX < scrollLeft) {
+      } else if (playheadX < scrollLeft) {
         viewport.scrollTo({
           left: playheadX,
           behavior: 'smooth',

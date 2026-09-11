@@ -104,7 +104,7 @@ export class MainToolbarComponent {
 
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      this.context.load_srt(file.name);
+      this.context.load_srt(file);
       input.value = '';
     }
   }
@@ -114,7 +114,7 @@ export class MainToolbarComponent {
 
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      this.context.load_video_file(file.name);
+      this.context.load_video_file(file);
       input.value = '';
       const objectUrl = URL.createObjectURL(file);
       this.context.setVideoUrl(this.#sanitizer.bypassSecurityTrustUrl(objectUrl));
