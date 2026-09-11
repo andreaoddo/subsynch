@@ -294,7 +294,7 @@ export class WaveformVisualizerComponent implements AfterViewInit, OnDestroy {
 
         viewport.scrollTo({
           left: targetScrollLeft,
-          behavior: 'smooth',
+          behavior: 'auto',
         });
       }
     });
@@ -317,12 +317,12 @@ export class WaveformVisualizerComponent implements AfterViewInit, OnDestroy {
       if (playheadX > rightEdge) {
         viewport.scrollTo({
           left: playheadX,
-          behavior: 'smooth',
+          behavior: 'auto',
         });
       } else if (playheadX < scrollLeft) {
         viewport.scrollTo({
           left: playheadX,
-          behavior: 'smooth',
+          behavior: 'auto',
         });
       }
     });
