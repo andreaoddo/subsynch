@@ -4,11 +4,12 @@ import { MatToolbar, MatToolbarRow } from '@angular/material/toolbar';
 import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { DomSanitizer } from '@angular/platform-browser';
+import { SeparatorButton } from './separator-button';
 
 
 @Component({
   selector: 'app-main-toolbar',
-  imports: [MatToolbar, MatToolbarRow, MatIconButton, MatTooltip],
+  imports: [MatToolbar, MatToolbarRow, MatIconButton, MatTooltip, SeparatorButton],
   styles: [
     `
       :host {
@@ -41,11 +42,7 @@ import { DomSanitizer } from '@angular/platform-browser';
         >
           <span class="material-symbols-outlined">save</span>
         </button>
-        <button matIconButton class="material-btn" disabled>
-          <span class="material-symbols-outlined" style="transform: rotate(90deg);">
-            horizontal_rule
-          </span>
-        </button>
+        <app-separator-button />
 
         <input
           type="file"
@@ -64,24 +61,46 @@ import { DomSanitizer } from '@angular/platform-browser';
           </div>
         </button>
 
-        <button matIconButton class="material-btn" disabled>
-          <span class="material-symbols-outlined" style="transform: rotate(90deg);">
-            horizontal_rule
+        <app-separator-button />
+
+        <button
+          matIconButton
+          matTooltip="{{ context.audioMode() ? 'Disable audio' : 'Enable audio' }}"
+          class="material-btn"
+          [disabled]="!context.videoUrl()"
+          (click)="context.toggleAudioMode()"
+        >
+          <span class="material-symbols-outlined">{{
+            context.audioMode() ? 'volume_up' : 'volume_off'
+          }}</span>
+        </button>
+
+        <button
+          matIconButton
+          matTooltip="{{ context.videoMode() ? 'Disable video' : 'Enable video' }}"
+          class="material-btn"
+          [disabled]="!context.videoUrl()"
+          (click)="context.toggleVideoMode()"
+        >
+          <span class="material-symbols-outlined">
+            {{ context.videoMode() ? 'movie' : 'movie_off' }}
           </span>
         </button>
 
-        <button matIconButton class="material-btn" (click)="context.addNewSubtitle()">
-          <span class="material-symbols-outlined"> variable_add </span>
-        </button>
-        <button matIconButton class="material-btn" (click)="context.removeSelectedSubtitle()">
-          <span class="material-symbols-outlined">variable_remove</span>
+        <app-separator-button />
+
+        <button
+          matIconButton
+          matTooltip="{{ context.isDarkMode() ? 'Enable light mode' : 'Enable dark mode' }}"
+          class="material-btn"
+          (click)="context.toggleDarkMode()"
+        >
+          <span class="material-symbols-outlined">
+            {{ context.isDarkMode() ? 'dark_mode' : 'light_mode' }}</span
+          >
         </button>
 
-        <button matIconButton class="material-btn" disabled>
-          <span class="material-symbols-outlined" style="transform: rotate(90deg);">
-            horizontal_rule
-          </span>
-        </button>
+        <app-separator-button />
 
         <button
           matIconButton

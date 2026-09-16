@@ -13,3 +13,5 @@ export interface SelectionRange {
   start: number;
   end: number;
 }
+
+export type VideoMode = 'none' | 'audio' | 'video';

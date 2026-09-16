@@ -1,42 +1,26 @@
-import { Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { Component, effect, ElementRef, inject, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ContextService } from './context.service';
-import { MatToolbar } from '@angular/material/toolbar';
 import { MatIconButton } from '@angular/material/button';
-import { FormatMsPipe } from './formatms.pipe';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-video-player',
   standalone: true,
-  imports: [CommonModule, MatToolbar, MatIconButton],
+  imports: [CommonModule, MatIconButton],
   template: `
     @if (this.context.videoUrl()) {
-      @if (this.context.videoUrl()) {
-        <div class="video-wrapper">
-          <video
-            #videoPlayer
-            [src]="this.context.videoUrl()"
-            crossorigin="anonymous"
-            (play)="startTracking()"
-            (pause)="stopTracking()"
-            (seeking)="syncTime()"
-          ></video>
-
-          <mat-toolbar>
-            <span class="spacer"></span>
-            <div class="centered-buttons">
-              <button matIconButton class="material-btn" (click)="play()">
-                <span class="material-symbols-outlined">play_arrow</span>
-              </button>
-              <button matIconButton class="material-btn" (click)="pause()">
-                <span class="material-symbols-outlined">pause</span>
-              </button>
-            </div>
-            <span class="spacer"></span>
-          </mat-toolbar>
-        </div>
-      }
+      <div class="video-wrapper">
+        <video
+          #videoPlayer
+          [src]="this.context.videoUrl()"
+          crossorigin="anonymous"
+          [class.audio-only]="!context.videoMode() && context.audioMode()"
+          (play)="onNativePlay()"
+          (pause)="onNativePause()"
+          (seeking)="syncTime()"
+          [volume]="context.audioMode() ? 1 : 0"
+        ></video>
+      </div>
     }
   `,
   styles: [
@@ -56,20 +40,8 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
         height: auto;
       }
 
-      mat-toolbar {
-        width: fit-content;
-        background-color: #dddddd;
-        border-radius: 30px;
-        padding: 0 16px;
-      }
-
-      .spacer {
-        flex: 1 1 auto;
-      }
-
-      .centered-buttons {
-        display: flex;
-        gap: 8px;
+      video.audio-only {
+        display: none !important;
       }
 
       ::ng-deep video::cue {
@@ -143,6 +115,37 @@ export class VideoplayerComponent {
         }
       }
     });
+
+    effect(() => {
+      const videoMode = this.context.videoMode();
+      const audioMode = this.context.audioMode();
+      if (!videoMode && !audioMode) {
+        this.pause();
+      }
+    });
+
+    effect(() => {
+      const shouldPlay = this.context.isPlaying();
+      const video = this.videoPlayer()?.nativeElement;
+
+      if (video) {
+        if (shouldPlay && video.paused) {
+          video.play();
+        } else if (!shouldPlay && !video.paused) {
+          video.pause();
+        }
+      }
+    });
+  }
+
+  onNativePlay(): void {
+    this.context.play();
+    this.startTracking();
+  }
+
+  onNativePause(): void {
+    this.context.pause();
+    this.stopTracking();
   }
 
   startTracking(): void {

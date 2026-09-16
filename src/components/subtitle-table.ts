@@ -15,7 +15,7 @@ import { ContextService } from './context.service';
       }
 
       .table-container {
-        max-height: 50vh;
+        height: 60vh;
         overflow: auto;
       }
 
@@ -69,8 +69,16 @@ import { ContextService } from './context.service';
         border-color: currentColor;
       }
 
+      /* Default (Light Mode) */
       .selected {
         background-color: #4a90e2;
+        color: white; /* Ensure text is readable */
+      }
+
+      .selected {
+        /* Uses your primary palette color automatically adjusting for light/dark mode */
+        background-color: var(--mat-sys-primary);
+        color: var(--mat-sys-on-primary);
       }
     `,
   ],

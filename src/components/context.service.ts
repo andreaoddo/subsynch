@@ -1,5 +1,5 @@
 import { computed, effect, inject, Injectable, model, NgZone, Signal, signal } from '@angular/core';
-import { SelectionRange, Subtitle, SubtitleAndId } from './dto';
+import { SelectionRange, Subtitle, SubtitleAndId, VideoMode } from './dto';
 import { v4 as uuid } from 'uuid';
 import { SafeUrl } from '@angular/platform-browser';
 
@@ -17,6 +17,10 @@ export class ContextService {
   #selectionRange = signal<{ start: number; end: number } | null>(null);
   #videoUrl = signal<SafeUrl | null>(null);
   #waveformLoading = signal<boolean>(false);
+  #audioMode = signal<boolean>(false);
+  #videoMode = signal<boolean>(false);
+  #isPlaying = signal<boolean>(false);
+  #isDarkMode = signal<boolean>(false);
 
   subtitles = this.#subtitles.asReadonly();
   waveform = this.#waveform.asReadonly();
@@ -28,6 +32,10 @@ export class ContextService {
   // selectedSubtitle = this.#selectedSubtitle.asReadonly();
   videoUrl = this.#videoUrl.asReadonly();
   waveformLoading = this.#waveformLoading.asReadonly();
+  videoMode = this.#videoMode.asReadonly();
+  audioMode = this.#audioMode.asReadonly();
+  isPlaying = this.#isPlaying.asReadonly();
+  isDarkMode = this.#isDarkMode.asReadonly();
 
   selectedSubtitle = computed(() => {
     const id = this.selectedSubtitleId();
@@ -49,11 +57,21 @@ export class ContextService {
         this.save_srt();
       }
     });
+
+    effect(() => {
+      const htmlElement = document.documentElement;
+      let dm = this.#isDarkMode();
+      if(dm) {
+        htmlElement.classList.add('dark-theme');
+      } else {
+        htmlElement.classList.remove('dark-theme');
+      }
+    })
   }
 
   async load_srt(file: File) {
     this.#subtitleFileName.set(file.name);
-    this.#parse_srt(file).then(subtitles => {
+    this.#parse_srt(file).then((subtitles) => {
       let subsAndId: SubtitleAndId[] = subtitles
         .sort((a, b) => a.fromTime - b.fromTime)
         .map((s) => {
@@ -80,9 +98,10 @@ export class ContextService {
 
     this.#extractWaveform(file).then((res) => {
       this.#waveform.set(res);
+      this.#videoMode.set(true);
+      this.#audioMode.set(true);
 
       this.#waveformLoading.set(false);
-
     });
   }
 
@@ -151,12 +170,32 @@ export class ContextService {
   }
 
   updateCurrentSubtitle(fromTime: number, toTime: number, text: string) {
-    if(!this.selectedSubtitleId()) return;
+    if (!this.selectedSubtitleId()) return;
     this.updateSubtitle(this.selectedSubtitleId()!, fromTime, toTime, text);
   }
 
   setVideoUrl(videoUrl: SafeUrl) {
     this.#videoUrl.set(videoUrl);
+  }
+
+  toggleVideoMode() {
+    this.#videoMode.update(mode => !mode);
+  }
+
+  toggleAudioMode() {
+    this.#audioMode.update(mode => !mode);
+  }
+
+  play() {
+    this.#isPlaying.set(true);
+  }
+
+  pause() {
+    this.#isPlaying.set(false);
+  }
+
+  toggleDarkMode() {
+    this.#isDarkMode.update(v => !v);
   }
 
   async #extractWaveform(file: File, binMs: number = 10): Promise<number[]> {
@@ -197,7 +236,6 @@ export class ContextService {
     const content = await file.text();
     const pattern = /(\d{2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})[,.](\d{3})/;
 
-
     const blocks = content.trim().split(/\r?\n\r?\n/);
 
     for (const block of blocks) {
@@ -227,6 +265,11 @@ export class ContextService {
   }
 
   #toMs(h: string, m: string, s: string, ms: string): number {
-    return parseInt(h, 10) * 3_600_000 + parseInt(m, 10) * 60_000 + parseInt(s, 10) * 1_000 + parseInt(ms, 10);
+    return (
+      parseInt(h, 10) * 3_600_000 +
+      parseInt(m, 10) * 60_000 +
+      parseInt(s, 10) * 1_000 +
+      parseInt(ms, 10)
+    );
   }
 }
