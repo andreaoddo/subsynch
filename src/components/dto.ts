@@ -18,10 +18,10 @@ export class Subtitle {
     const durationMs = this.durationMs;
     const cps = this.cps;
     if(durationMs < 1000 || cps > 20) return 'TOO_FAST';
-    if(cps > 17 && cps <= 20) return 'WARNING_FAST';
+    if(cps > 17 && cps <= 20 && durationMs >= 1000) return 'FAST';
+    if(durationMs >= 1000 && durationMs < 1500 && cps <= 17) return 'FLASH'
     if(cps >= 12 && cps <= 17 && durationMs >= 1500) return 'OPTIMAL';
-    if(durationMs >= 1000 && durationMs < 1500 && cps <= 17) return 'WARNING_SLOW'
-    else return 'TOO_SLOW'
+    else return 'SLOW'
   }
 }
 
@@ -37,4 +37,4 @@ export interface SelectionRange {
 
 export type VideoMode = 'none' | 'audio' | 'video';
 
-export type SubtitleSpeed = 'TOO_FAST' | 'WARNING_FAST' | 'OPTIMAL' | 'WARNING_SLOW' | 'TOO_SLOW'
+export type SubtitleSpeed = 'TOO_FAST' | 'FAST' | 'OPTIMAL' | 'FLASH' | 'SLOW'

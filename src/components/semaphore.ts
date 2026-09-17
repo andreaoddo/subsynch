@@ -29,35 +29,30 @@ export class SemaphoreComponent {
 
   color = computed(() => {
     let speed = this.speed();
+    console.log(speed);
     if (!speed) return;
-    switch (speed!) {
-      case 'TOO_FAST':
-        return '#D32F2F';
-      case 'WARNING_FAST':
-        return '#F57C00';
-      case 'OPTIMAL':
-        return '#388E3C';
-      case 'WARNING_SLOW':
-        return '#0288D1';
-      case 'TOO_SLOW':
-        return '#283593';
-    }
+    const colors: Record<string, string> = {
+      TOO_FAST: '#D47F7F',
+      FAST: '#DDA173',
+      FLASH: '#E6B86A',
+      OPTIMAL: '#8EBA9A',
+      SLOW: '#9396B9',
+    };
+    let color = colors[speed];
+    console.log(color)
+    return color;
   });
 
   tooltip = computed(() => {
     let speed = this.speed();
     if (!speed) return;
-    switch (speed!) {
-      case 'TOO_FAST':
-        return 'Too fast';
-      case 'WARNING_FAST':
-        return 'Fast';
-      case 'OPTIMAL':
-        return 'Optimal';
-      case 'WARNING_SLOW':
-        return 'Slow';
-      case 'TOO_SLOW':
-        return 'Too slow';
-    }
+    const tooltip: Record<string, string> = {
+      TOO_FAST: 'Too fast',
+      FAST: 'Fast',
+      FLASH: 'Fast flash',
+      OPTIMAL: 'Optimal',
+      SLOW: 'Slow',
+    };
+    return tooltip[speed];
   });
 }
