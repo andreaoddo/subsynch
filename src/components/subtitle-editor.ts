@@ -92,6 +92,19 @@ import { MatIconButton } from '@angular/material/button';
           >
             <span class="material-symbols-outlined">variable_remove</span>
           </button>
+          <button
+            matIconButton
+            class="material-btn action-button"
+            (click)="context.splitSelectedSubtitle()"
+          >
+            <span class="material-symbols-outlined">splitscreen</span>
+          </button>
+          <button
+            matIconButton
+            class="material-btn action-button"
+          >
+            <span class="material-symbols-outlined">stack_group</span>
+          </button>
         </div>
       </div>
 

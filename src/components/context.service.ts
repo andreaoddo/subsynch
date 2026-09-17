@@ -118,23 +118,26 @@ export class ContextService {
   }
 
   addNewSubtitle() {
-    let sub: SubtitleAndId = {
-      id: uuid(),
-      subtitle: new Subtitle(0, 0,'(empty)')
-    };
+    let sub = new Subtitle(0, 0, '(empty)');
     if (this.selectionRange()) {
-      sub.subtitle.fromTime = Math.round(this.selectionRange()!.start);
-      sub.subtitle.toTime = Math.round(this.selectionRange()!.end);
+      sub.fromTime = Math.round(this.selectionRange()!.start);
+      sub.toTime = Math.round(this.selectionRange()!.end);
     } else {
-      sub.subtitle.fromTime = this.currentTime();
-      sub.subtitle.toTime = this.currentTime() + 3000;
+      sub.fromTime = this.currentTime();
+      sub.toTime = this.currentTime() + 3000;
     }
 
+    const id = this.#doAdd(sub);
+    this.#selectedSubtitleId.set(id);
+  }
+
+  #doAdd(sub: Subtitle): string {
+    const subAndId = {id: uuid(), subtitle: sub}
     this.#subtitles.update((subs) => {
-      const newSubs = [...subs, sub];
+      const newSubs = [...subs, subAndId];
       return newSubs.sort((a, b) => a.subtitle.fromTime - b.subtitle.fromTime);
-    });
-    this.#selectedSubtitleId.set(sub.id);
+    })
+    return subAndId.id
   }
 
   removeSelectedSubtitle() {
@@ -143,6 +146,20 @@ export class ContextService {
     this.#subtitles.update((subs) => {
       return subs.filter((sub) => sub.id != this.selectedSubtitleId()!);
     });
+  }
+
+  splitSelectedSubtitle() {
+    if (!this.selectedSubtitleId()) return;
+
+    let selected = this.selectedSubtitle()!;
+    let midPoint= Math.round((selected.subtitle.fromTime + selected.subtitle.toTime)/2)
+    let first = new Subtitle(selected.subtitle.fromTime, midPoint, selected.subtitle.text);
+    let second = new Subtitle(midPoint+1, selected.subtitle.toTime, selected.subtitle.text);
+    this.removeSelectedSubtitle();
+    let id = this.#doAdd(first);
+    this.#doAdd(second);
+    this.#selectedSubtitleId.set(id);
+
   }
 
   setCurrentSubtitle(id: string) {
