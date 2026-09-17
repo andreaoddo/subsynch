@@ -281,23 +281,31 @@ export class WaveformVisualizerComponent implements AfterViewInit, OnDestroy {
   MIN_DURATION_MS = 100;
 
   constructor() {
-    effect(() => {
-      const activeId = this.context.selectedSubtitleId();
-      const viewport = this.viewportRef()?.nativeElement;
+    effect(
+      () => {
+        const activeId = this.context.selectedSubtitleId();
+        const viewport = this.viewportRef()?.nativeElement;
 
-      if (activeId !== null && viewport) {
-        const activeSub = untracked(() => this.context.selectedSubtitle()!.subtitle);
-        const subCenterPixel =
-          (((activeSub.toTime + activeSub.fromTime) / 1000) * this.pixelsPerSecond()) / 2;
-        const containerHalfWidth = this.containerWidth() / 2;
-        const targetScrollLeft = Math.max(0, subCenterPixel - containerHalfWidth);
+        if (activeId !== null && viewport) {
+          const activeSub = untracked(() => this.context.selectedSubtitle()!.subtitle);
 
-        viewport.scrollTo({
-          left: targetScrollLeft,
-          behavior: 'auto',
-        });
-      }
-    });
+          untracked(() => {
+            this.context.setCurrentTime(activeSub.fromTime);
+          });
+
+          const subCenterPixel =
+            (((activeSub.toTime + activeSub.fromTime) / 1000) * this.pixelsPerSecond()) / 2;
+          const containerHalfWidth = this.containerWidth() / 2;
+          const targetScrollLeft = Math.max(0, subCenterPixel - containerHalfWidth);
+
+          viewport.scrollTo({
+            left: targetScrollLeft,
+            behavior: 'auto',
+          });
+        }
+      },
+      { allowSignalWrites: true }, // SAFE as long as setting the currentTime does not modify the selectedSubtitleId
+    );
 
     effect(() => {
       const currentTimeMs = this.context.currentTime();
