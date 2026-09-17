@@ -80,7 +80,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
     `,
   ],
   template: `
-    <div style="display: flex; flex-direction: row; height: 10vh;">
+    <div style="display: flex; flex-direction: row; height: auto;">
       <div class="button-group group">
         <div class="sub-label">Subtitle actions</div>
         <div class="grid-container">
@@ -131,19 +131,19 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
         </mat-form-field>
         <div class="time-indicators">
           <span class="time-indicator">
-            <div class="sub-label" style="width: 3vw">Start time</div>
+            <div class="sub-label" style="width: 3.5vw">Start time</div>
             <div>{{ formatMs(currentSubFrom()) }}</div>
           </span>
           <span class="time-indicator">
-            <div class="sub-label" style="width: 3vw">End time</div>
+            <div class="sub-label" style="width: 3.5vw">End time</div>
             <div>{{ formatMs(currentSubTo()) }}</div>
           </span>
           <span class="time-indicator">
-            <div class="sub-label" style="width: 3vw">Duration</div>
+            <div class="sub-label" style="width: 3.5vw">Duration</div>
             <div>{{ formatMs(currentSubDuration()) }}</div>
           </span>
           <span class="time-indicator">
-            <div class="sub-label" style="width: 3vw">Cursor</div>
+            <div class="sub-label" style="width: 3.5vw">Cursor</div>
             <div>{{ formatMs(context.currentTime()) }}</div>
           </span>
         </div>
@@ -187,6 +187,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
         <mat-button-toggle-group
           name="fontStyle"
           aria-label="Font Style"
+          style="margin-bottom: 10px;"
           [value]="context.shiftMode()"
           (change)="context.updateShiftMode($event.value)"
         >
