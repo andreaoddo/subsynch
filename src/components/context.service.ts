@@ -142,10 +142,14 @@ export class ContextService {
 
   removeSelectedSubtitle() {
     if (!this.selectedSubtitleId()) return;
+    this.#doRemoveById(this.selectedSubtitleId()!);
+  }
 
+  #doRemoveById(id: string) {
     this.#subtitles.update((subs) => {
-      return subs.filter((sub) => sub.id != this.selectedSubtitleId()!);
+      return subs.filter((sub) => sub.id != id!);
     });
+
   }
 
   splitSelectedSubtitle() {
@@ -159,6 +163,16 @@ export class ContextService {
     let id = this.#doAdd(first);
     this.#doAdd(second);
     this.#selectedSubtitleId.set(id);
+  }
+
+  mergeSelectedSubtitleWithNext() {
+    let selected = this.selectedSubtitle();
+    if(!selected) return;
+    let index = this.subtitles().findIndex(s => s.id === this.selectedSubtitleId());
+    if(index + 1 === this.subtitles().length) return;
+    let next = this.subtitles()[index+1]
+    this.updateCurrentSubtitle(selected?.subtitle.fromTime, next.subtitle.toTime, selected.subtitle.text + '\n' + next.subtitle.text);
+    this.#doRemoveById(next.id);
 
   }
 

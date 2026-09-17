@@ -102,6 +102,7 @@ import { MatIconButton } from '@angular/material/button';
           <button
             matIconButton
             class="material-btn action-button"
+            (click)="context.mergeSelectedSubtitleWithNext()"
           >
             <span class="material-symbols-outlined">stack_group</span>
           </button>
