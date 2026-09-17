@@ -3,11 +3,12 @@ import { MatTableModule } from '@angular/material/table';
 import { FormatMsPipe } from './formatms.pipe';
 import { FormatSubPipe } from './format-sub.pipe';
 import { ContextService } from './context.service';
+import { SemaphoreComponent } from './semaphore';
 
 @Component({
   selector: 'app-subtitle-table',
   standalone: true,
-  imports: [MatTableModule, FormatMsPipe, FormatSubPipe],
+  imports: [MatTableModule, FormatMsPipe, FormatSubPipe, SemaphoreComponent],
   styles: [
     `
       :host {
@@ -44,15 +45,19 @@ import { ContextService } from './context.service';
       }
 
       .mat-column-fromTime {
-        width: 5vw;
+        width: 4vw;
       }
 
       .mat-column-toTime {
-        width: 5vw;
+        width: 4vw;
       }
 
       .mat-column-duration {
-        width: 5vw;
+        width: 4vw;
+      }
+
+      .mat-column-speed {
+        width: 1vw;
       }
 
       .mat-column-text {
@@ -111,6 +116,13 @@ import { ContextService } from './context.service';
             </td>
           </ng-container>
 
+          <ng-container matColumnDef="speed">
+            <th mat-header-cell *matHeaderCellDef>Speed</th>
+            <td mat-cell *matCellDef="let element">
+              <app-semaphore [speed]="element.subtitle.speed"></app-semaphore>
+            </td>
+          </ng-container>
+
           <!-- Text Column -->
           <ng-container matColumnDef="text">
             <th mat-header-cell *matHeaderCellDef>Text</th>
@@ -132,7 +144,7 @@ import { ContextService } from './context.service';
 })
 export class SubtitleTable {
   context = inject(ContextService);
-  displayedColumns: string[] = ['position', 'fromTime', 'toTime', 'duration', 'text'];
+  displayedColumns: string[] = ['position', 'fromTime', 'toTime', 'duration', 'speed', 'text'];
 
   setCurrentSub(i: string | null | undefined) {
     if (i === null || i === undefined) return;

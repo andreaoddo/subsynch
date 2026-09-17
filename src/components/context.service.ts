@@ -120,11 +120,7 @@ export class ContextService {
   addNewSubtitle() {
     let sub: SubtitleAndId = {
       id: uuid(),
-      subtitle: {
-        fromTime: 0,
-        toTime: 0,
-        text: '(empty)',
-      },
+      subtitle: new Subtitle(0, 0,'(empty)')
     };
     if (this.selectionRange()) {
       sub.subtitle.fromTime = Math.round(this.selectionRange()!.start);
@@ -164,7 +160,7 @@ export class ContextService {
   updateSubtitle(id: string, fromTime: number, toTime: number, text: string) {
     this.#subtitles.update((subs: SubtitleAndId[]) => {
       return subs.map((sub) =>
-        sub.id === id ? { ...sub, subtitle: { fromTime, toTime, text } } : sub,
+        sub.id === id ? { ...sub, subtitle: new Subtitle( fromTime, toTime, text ) } : sub,
       );
     });
   }
@@ -254,11 +250,7 @@ export class ContextService {
       const endMs = this.#toMs(match[5], match[6], match[7], match[8]);
       const text = lines.slice(2).join('\n');
 
-      subs.push({
-        fromTime: startMs,
-        toTime: endMs,
-        text: text,
-      });
+      subs.push(new Subtitle(startMs, endMs, text ));
     }
 
     return subs;
