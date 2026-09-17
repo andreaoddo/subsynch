@@ -2,13 +2,12 @@
 
 @include mat.core();
 
-// 1. Default (Light Mode) + Typography & Density
 html {
   @include mat.theme((
     color: (
       primary: mat.$azure-palette,
       tertiary: mat.$blue-palette,
-      theme-type: light, // Force light theme variables
+      theme-type: light,
     ),
     typography: Roboto,
     density: 0,

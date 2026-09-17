@@ -1,5 +1,5 @@
 import { computed, effect, inject, Injectable, model, NgZone, Signal, signal } from '@angular/core';
-import { SelectionRange, Subtitle, SubtitleAndId, VideoMode } from './dto';
+import { SelectionRange, ShiftMode, Subtitle, SubtitleAndId, VideoMode } from './dto';
 import { v4 as uuid } from 'uuid';
 import { SafeUrl } from '@angular/platform-browser';
 
@@ -21,6 +21,7 @@ export class ContextService {
   #videoMode = signal<boolean>(false);
   #isPlaying = signal<boolean>(false);
   #isDarkMode = signal<boolean>(false);
+  #shiftMode = signal<ShiftMode>('THIS');
 
   subtitles = this.#subtitles.asReadonly();
   waveform = this.#waveform.asReadonly();
@@ -29,13 +30,13 @@ export class ContextService {
   videoFileName = this.#videoFileName.asReadonly();
   currentTime = this.#currentTime.asReadonly();
   selectionRange = this.#selectionRange.asReadonly();
-  // selectedSubtitle = this.#selectedSubtitle.asReadonly();
   videoUrl = this.#videoUrl.asReadonly();
   waveformLoading = this.#waveformLoading.asReadonly();
   videoMode = this.#videoMode.asReadonly();
   audioMode = this.#audioMode.asReadonly();
   isPlaying = this.#isPlaying.asReadonly();
   isDarkMode = this.#isDarkMode.asReadonly();
+  shiftMode = this.#shiftMode.asReadonly();
 
   selectedSubtitle = computed(() => {
     const id = this.selectedSubtitleId();
@@ -61,12 +62,12 @@ export class ContextService {
     effect(() => {
       const htmlElement = document.documentElement;
       let dm = this.#isDarkMode();
-      if(dm) {
+      if (dm) {
         htmlElement.classList.add('dark-theme');
       } else {
         htmlElement.classList.remove('dark-theme');
       }
-    })
+    });
   }
 
   async load_srt(file: File) {
@@ -132,12 +133,12 @@ export class ContextService {
   }
 
   #doAdd(sub: Subtitle): string {
-    const subAndId = {id: uuid(), subtitle: sub}
+    const subAndId = { id: uuid(), subtitle: sub };
     this.#subtitles.update((subs) => {
       const newSubs = [...subs, subAndId];
       return newSubs.sort((a, b) => a.subtitle.fromTime - b.subtitle.fromTime);
-    })
-    return subAndId.id
+    });
+    return subAndId.id;
   }
 
   removeSelectedSubtitle() {
@@ -149,16 +150,15 @@ export class ContextService {
     this.#subtitles.update((subs) => {
       return subs.filter((sub) => sub.id != id!);
     });
-
   }
 
   splitSelectedSubtitle() {
     if (!this.selectedSubtitleId()) return;
 
     let selected = this.selectedSubtitle()!;
-    let midPoint= Math.round((selected.subtitle.fromTime + selected.subtitle.toTime)/2)
+    let midPoint = Math.round((selected.subtitle.fromTime + selected.subtitle.toTime) / 2);
     let first = new Subtitle(selected.subtitle.fromTime, midPoint, selected.subtitle.text);
-    let second = new Subtitle(midPoint+1, selected.subtitle.toTime, selected.subtitle.text);
+    let second = new Subtitle(midPoint + 1, selected.subtitle.toTime, selected.subtitle.text);
     this.removeSelectedSubtitle();
     let id = this.#doAdd(first);
     this.#doAdd(second);
@@ -167,13 +167,16 @@ export class ContextService {
 
   mergeSelectedSubtitleWithNext() {
     let selected = this.selectedSubtitle();
-    if(!selected) return;
-    let index = this.subtitles().findIndex(s => s.id === this.selectedSubtitleId());
-    if(index + 1 === this.subtitles().length) return;
-    let next = this.subtitles()[index+1]
-    this.updateCurrentSubtitle(selected?.subtitle.fromTime, next.subtitle.toTime, selected.subtitle.text + '\n' + next.subtitle.text);
+    if (!selected) return;
+    let index = this.subtitles().findIndex((s) => s.id === this.selectedSubtitleId());
+    if (index + 1 === this.subtitles().length) return;
+    let next = this.subtitles()[index + 1];
+    this.updateCurrentSubtitle(
+      selected?.subtitle.fromTime,
+      next.subtitle.toTime,
+      selected.subtitle.text + '\n' + next.subtitle.text,
+    );
     this.#doRemoveById(next.id);
-
   }
 
   setCurrentSubtitle(id: string) {
@@ -191,7 +194,7 @@ export class ContextService {
   updateSubtitle(id: string, fromTime: number, toTime: number, text: string) {
     this.#subtitles.update((subs: SubtitleAndId[]) => {
       return subs.map((sub) =>
-        sub.id === id ? { ...sub, subtitle: new Subtitle( fromTime, toTime, text ) } : sub,
+        sub.id === id ? { ...sub, subtitle: new Subtitle(fromTime, toTime, text) } : sub,
       );
     });
   }
@@ -201,16 +204,42 @@ export class ContextService {
     this.updateSubtitle(this.selectedSubtitleId()!, fromTime, toTime, text);
   }
 
+  private shiftSubtitlesByCondition(msShift: number, conditionFn: (sub: any) => boolean) {
+    this.#subtitles.update((currentSubtitles) => {
+      return currentSubtitles.map((subAndId) => {
+        if (conditionFn(subAndId)) {
+          return {
+            ...subAndId,
+            subtitle: new Subtitle(Math.max(subAndId.subtitle.fromTime + msShift, 0), Math.max(subAndId.subtitle.toTime + msShift, 0), subAndId.subtitle.text),
+          };
+        }
+        return subAndId;
+      });
+    });
+  }
+
+  shiftSingleSubtitle(id: any, msShift: number) {
+    this.shiftSubtitlesByCondition(msShift, (sub) => sub.id === id);
+  }
+
+  shiftSubtitlesFrom(fromTime: number, msShift: number) {
+    this.shiftSubtitlesByCondition(msShift, (sub) => sub.subtitle.fromTime >= fromTime);
+  }
+
+  shiftAllSubtitles(msShift: number) {
+    this.shiftSubtitlesByCondition(msShift, () => true);
+  }
+
   setVideoUrl(videoUrl: SafeUrl) {
     this.#videoUrl.set(videoUrl);
   }
 
   toggleVideoMode() {
-    this.#videoMode.update(mode => !mode);
+    this.#videoMode.update((mode) => !mode);
   }
 
   toggleAudioMode() {
-    this.#audioMode.update(mode => !mode);
+    this.#audioMode.update((mode) => !mode);
   }
 
   play() {
@@ -222,7 +251,11 @@ export class ContextService {
   }
 
   toggleDarkMode() {
-    this.#isDarkMode.update(v => !v);
+    this.#isDarkMode.update((v) => !v);
+  }
+
+  updateShiftMode(v: ShiftMode) {
+    this.#shiftMode.set(v);
   }
 
   async #extractWaveform(file: File, binMs: number = 10): Promise<number[]> {
@@ -281,7 +314,7 @@ export class ContextService {
       const endMs = this.#toMs(match[5], match[6], match[7], match[8]);
       const text = lines.slice(2).join('\n');
 
-      subs.push(new Subtitle(startMs, endMs, text ));
+      subs.push(new Subtitle(startMs, endMs, text));
     }
 
     return subs;

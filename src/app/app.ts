@@ -1,10 +1,11 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { SubtitleTable } from '../components/subtitle-table';
 import { WaveformVisualizerComponent } from '../components/waveform-visualizer.component';
 import { MainToolbarComponent } from '../components/main-toolbar';
 import { SubtitleEditorComponent } from '../components/subtitle-editor';
 import { VideoplayerComponent } from '../components/videoplayer';
+import { ContextService } from '../components/context.service';
 
 @Component({
   selector: 'app-root',
@@ -48,4 +49,5 @@ import { VideoplayerComponent } from '../components/videoplayer';
 })
 export class App {
   protected readonly title = signal('subsynch');
+  context = inject(ContextService);
 }

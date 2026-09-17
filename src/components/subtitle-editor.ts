@@ -1,14 +1,14 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, effect, viewChild, ElementRef } from '@angular/core';
 import { MatFormField, MatInput, MatLabel } from '@angular/material/input';
 import { ContextService } from './context.service';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatSliderModule } from '@angular/material/slider';
-import { VideoMode } from './dto';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatToolbar } from '@angular/material/toolbar';
 import { MatIconButton } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 @Component({
   selector: 'app-subtitle-editor',
@@ -24,6 +24,7 @@ import { MatIconButton } from '@angular/material/button';
     MatRadioModule,
     MatToolbar,
     MatIconButton,
+    MatButtonToggleModule,
   ],
   styles: [
     `
@@ -71,16 +72,22 @@ import { MatIconButton } from '@angular/material/button';
           margin-left: 10px;
         }
       }
+
+      .grid-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* Crea 2 colonne di uguale larghezza */
+      }
     `,
   ],
   template: `
-    <div style="display: flex; flex-direction: row; height: 8vh;">
+    <div style="display: flex; flex-direction: row; height: 10vh;">
       <div class="button-group group">
         <div class="sub-label">Subtitle actions</div>
-        <div>
+        <div class="grid-container">
           <button
             matIconButton
             class="material-btn action-button"
+            matTooltip="Add"
             (click)="context.addNewSubtitle()"
           >
             <span class="material-symbols-outlined"> variable_add </span>
@@ -88,6 +95,7 @@ import { MatIconButton } from '@angular/material/button';
           <button
             matIconButton
             class="material-btn action-button"
+            matTooltip="Remove"
             (click)="context.removeSelectedSubtitle()"
           >
             <span class="material-symbols-outlined">variable_remove</span>
@@ -95,6 +103,7 @@ import { MatIconButton } from '@angular/material/button';
           <button
             matIconButton
             class="material-btn action-button"
+            matTooltip="Split"
             (click)="context.splitSelectedSubtitle()"
           >
             <span class="material-symbols-outlined">splitscreen</span>
@@ -102,6 +111,7 @@ import { MatIconButton } from '@angular/material/button';
           <button
             matIconButton
             class="material-btn action-button"
+            matTooltip="Merge with next"
             (click)="context.mergeSelectedSubtitleWithNext()"
           >
             <span class="material-symbols-outlined">stack_group</span>
@@ -113,6 +123,7 @@ import { MatIconButton } from '@angular/material/button';
         <mat-form-field style="width: 25vw;" subscriptSizing="dynamic">
           <mat-label>Text</mat-label>
           <textarea
+            #subtitleInput
             matInput
             [value]="currentSubText() || ' '"
             (input)="onTextChanged($event)"
@@ -120,19 +131,19 @@ import { MatIconButton } from '@angular/material/button';
         </mat-form-field>
         <div class="time-indicators">
           <span class="time-indicator">
-            <div class="sub-label" style="width: 4vw">Start time</div>
+            <div class="sub-label" style="width: 3vw">Start time</div>
             <div>{{ formatMs(currentSubFrom()) }}</div>
           </span>
           <span class="time-indicator">
-            <div class="sub-label" style="width: 4vw">End time</div>
+            <div class="sub-label" style="width: 3vw">End time</div>
             <div>{{ formatMs(currentSubTo()) }}</div>
           </span>
           <span class="time-indicator">
-            <div class="sub-label" style="width: 4vw">Duration</div>
+            <div class="sub-label" style="width: 3vw">Duration</div>
             <div>{{ formatMs(currentSubDuration()) }}</div>
           </span>
           <span class="time-indicator">
-            <div class="sub-label" style="width: 4vw">Cursor</div>
+            <div class="sub-label" style="width: 3vw">Cursor</div>
             <div>{{ formatMs(context.currentTime()) }}</div>
           </span>
         </div>
@@ -173,6 +184,16 @@ import { MatIconButton } from '@angular/material/button';
             <span class="material-symbols-outlined">keyboard_double_arrow_right</span>
           </button>
         </div>
+        <mat-button-toggle-group
+          name="fontStyle"
+          aria-label="Font Style"
+          [value]="context.shiftMode()"
+          (change)="context.updateShiftMode($event.value)"
+        >
+          <mat-button-toggle value="THIS">This</mat-button-toggle>
+          <mat-button-toggle value="TO_END">To end</mat-button-toggle>
+          <mat-button-toggle value="ALL">All</mat-button-toggle>
+        </mat-button-toggle-group>
       </div>
 
       <div class="button-group group">
@@ -201,11 +222,22 @@ import { MatIconButton } from '@angular/material/button';
 })
 export class SubtitleEditorComponent {
   context = inject(ContextService);
+  subtitleInput = viewChild<ElementRef<HTMLTextAreaElement>>('subtitleInput');
 
   currentSubText = computed(() => this.context.selectedSubtitle()?.subtitle.text);
   currentSubFrom = computed(() => this.context.selectedSubtitle()?.subtitle.fromTime);
   currentSubTo = computed(() => this.context.selectedSubtitle()?.subtitle.toTime);
   currentSubDuration = computed(() => (this.currentSubTo() ?? 0) - (this.currentSubFrom() ?? 0));
+
+  constructor() {
+    effect(() => {
+      let currentSub = this.context.selectedSubtitle();
+      let subInput = this.subtitleInput()
+      if(currentSub && subInput) {
+        subInput.nativeElement.focus();
+      }
+    });
+  }
 
   onTextChanged(event: Event): void {
     const newText = (event.target as HTMLTextAreaElement).value;
@@ -220,16 +252,21 @@ export class SubtitleEditorComponent {
   }
 
   shift(ms: number) {
-    if (!this.context.selectedSubtitle()) return;
-    let fromTime = this.context.selectedSubtitle()!.subtitle.fromTime;
-    let toTime = this.context.selectedSubtitle()!.subtitle.toTime;
-    if (!fromTime || !toTime) return;
+    const selectedSub = this.context.selectedSubtitle();
+    switch (this.context.shiftMode()) {
+      case 'THIS':
+        if (!selectedSub) return;
+        this.context.shiftSingleSubtitle(selectedSub.id, ms);
+        break;
 
-    let newFrom = Math.max(fromTime + ms, 0);
-    let newTo = Math.max(toTime + ms, 0);
+      case 'TO_END':
+        if (!selectedSub) return;
+        this.context.shiftSubtitlesFrom(selectedSub.subtitle.fromTime, ms);
+        break;
 
-    if (this.context.selectedSubtitle()) {
-      this.#updateCurrentSubtitle(newFrom, newTo, this.context.selectedSubtitle()!.subtitle.text);
+      case 'ALL':
+        this.context.shiftAllSubtitles(ms);
+        break;
     }
   }
 

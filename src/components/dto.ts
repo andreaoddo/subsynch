@@ -36,5 +36,6 @@ export interface SelectionRange {
 }
 
 export type VideoMode = 'none' | 'audio' | 'video';
+export type ShiftMode = 'THIS' | 'TO_END' | 'ALL';
 
 export type SubtitleSpeed = 'TOO_FAST' | 'FAST' | 'OPTIMAL' | 'FLASH' | 'SLOW'
