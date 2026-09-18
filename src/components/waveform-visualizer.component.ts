@@ -303,8 +303,7 @@ export class WaveformVisualizerComponent implements AfterViewInit, OnDestroy {
             behavior: 'auto',
           });
         }
-      },
-      { allowSignalWrites: true }, // SAFE as long as setting the currentTime does not modify the selectedSubtitleId
+      }
     );
 
     effect(() => {

@@ -5,8 +5,8 @@ import { Pipe, PipeTransform } from '@angular/core';
   standalone: true,
 })
 export class FormatMsPipe implements PipeTransform {
-  transform(ms: number | null | undefined): string {
-    if (ms == null || isNaN(ms) || ms < 0) return '00:00:00.000';
+  transform(ms: number | null | undefined, delimiter: string = '.'): string {
+    if (ms == null || isNaN(ms) || ms < 0) return `00:00:00${delimiter}000`;
 
     const hours = Math.floor(ms / 3_600_000);
     const minutes = Math.floor((ms % 3_600_000) / 60_000);
@@ -15,6 +15,6 @@ export class FormatMsPipe implements PipeTransform {
 
     const pad = (val: number, size: number) => val.toString().padStart(size, '0');
 
-    return `${pad(hours, 2)}:${pad(minutes, 2)}:${pad(seconds, 2)}.${pad(milliseconds, 3)}`;
+    return `${pad(hours, 2)}:${pad(minutes, 2)}:${pad(seconds, 2)}${delimiter}${pad(milliseconds, 3)}`;
   }
 }

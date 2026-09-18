@@ -5,11 +5,13 @@ import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { DomSanitizer } from '@angular/platform-browser';
 import { SeparatorButton } from './separator-button';
+import { MatBadgeModule } from '@angular/material/badge';
+
 
 
 @Component({
   selector: 'app-main-toolbar',
-  imports: [MatToolbar, MatToolbarRow, MatIconButton, MatTooltip, SeparatorButton],
+  imports: [MatToolbar, MatToolbarRow, MatIconButton, MatTooltip, SeparatorButton, MatBadgeModule],
   styles: [
     `
       :host {
@@ -38,9 +40,24 @@ import { SeparatorButton } from './separator-button';
           matIconButton
           matTooltip="Save subtitles"
           class="material-btn"
-          (click)="context.save_srt()"
+          (click)="context.saveToLocalStorage()"
         >
-          <span class="material-symbols-outlined">save</span>
+          <span
+            class="material-symbols-outlined"
+            matBadge="!"
+            matBadgeColor="warn"
+            matBadgePosition="below after"
+            [matBadgeHidden]="!context.hasPendingChanges()"
+            >save</span
+          >
+        </button>
+        <button
+          matIconButton
+          matTooltip="Download srt"
+          class="material-btn"
+          (click)="context.downloadSrtFile()"
+        >
+          <span class="material-symbols-outlined">download</span>
         </button>
         <app-separator-button />
 

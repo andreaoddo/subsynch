@@ -2,15 +2,17 @@ import { computed, effect, inject, Injectable, model, NgZone, Signal, signal } f
 import { SelectionRange, ShiftMode, Subtitle, SubtitleAndId, VideoMode } from './dto';
 import { v4 as uuid } from 'uuid';
 import { SafeUrl } from '@angular/platform-browser';
+import { FormatMsPipe } from './formatms.pipe';
 
 
 @Injectable({ providedIn: 'root' })
 export class ContextService {
-  #zone = inject(NgZone);
+  #formatMs = inject(FormatMsPipe);
 
   #subtitles = signal<SubtitleAndId[]>([]);
   #waveform = signal<number[]>([]);
   #selectedSubtitleId = signal<string | null>(null);
+  #subtitleFile = signal<File | null>(null);
   #subtitleFileName = signal<string | null>(null);
   #videoFileName = signal<string | null>(null);
   #currentTime = signal<number>(0);
@@ -22,11 +24,13 @@ export class ContextService {
   #isPlaying = signal<boolean>(false);
   #isDarkMode = signal<boolean>(false);
   #shiftMode = signal<ShiftMode>('THIS');
+  #isInitialLoad = false;
+  #hasPendingChanges = signal<boolean>(false);
 
   subtitles = this.#subtitles.asReadonly();
   waveform = this.#waveform.asReadonly();
   selectedSubtitleId = this.#selectedSubtitleId.asReadonly();
-  subtitleFileName = this.#subtitleFileName.asReadonly();
+  subtitleFileName = computed(() => this.#subtitleFile.name);
   videoFileName = this.#videoFileName.asReadonly();
   currentTime = this.#currentTime.asReadonly();
   selectionRange = this.#selectionRange.asReadonly();
@@ -37,6 +41,7 @@ export class ContextService {
   isPlaying = this.#isPlaying.asReadonly();
   isDarkMode = this.#isDarkMode.asReadonly();
   shiftMode = this.#shiftMode.asReadonly();
+  hasPendingChanges = this.#hasPendingChanges.asReadonly();
 
   selectedSubtitle = computed(() => {
     const id = this.selectedSubtitleId();
@@ -45,17 +50,25 @@ export class ContextService {
   });
 
   constructor() {
+    setInterval(() => {
+      if (this.#hasPendingChanges()) {
+        this.saveToLocalStorage();
+      }
+    }, 300000); // 300,000 ms = 5 minutes
+
     effect(() => {
       let subs = this.subtitles();
-      if (!(window as any).pywebview) {
-        // Python API not yet injected, just skip it
-        return;
-      }
-      if (subs) {
+      if (subs && subs.length > 0) {
         this.#subtitles.update((subtitles) =>
           subtitles.sort((a, b) => a.subtitle.fromTime - b.subtitle.fromTime),
         );
-        this.save_srt();
+
+        // If it's an initial load, skip flagging it and reset the variable
+        if (this.#isInitialLoad) {
+          this.#isInitialLoad = false;
+        } else {
+          this.#hasPendingChanges.set(true);
+        }
       }
     });
 
@@ -71,25 +84,19 @@ export class ContextService {
   }
 
   async load_srt(file: File) {
-    this.#subtitleFileName.set(file.name);
     this.#parse_srt(file).then((subtitles) => {
       let subsAndId: SubtitleAndId[] = subtitles
         .sort((a, b) => a.fromTime - b.fromTime)
         .map((s) => {
           return { id: uuid(), subtitle: s };
         });
-      this.#subtitles.set(subsAndId);
-    });
-  }
 
-  async save_srt() {
-    // console.log(await (window as any));
-    if (this.subtitles().length > 0) {
-      await (window as any).pywebview.api.save_srt(
-        this.subtitles().map((s) => s.subtitle),
-        this.subtitleFileName(),
-      );
-    }
+      // Tell the effect to ignore this specific update
+      this.#isInitialLoad = true;
+
+      this.#subtitles.set(subsAndId);
+      this.#hasPendingChanges.set(false); // Ensure badge is hidden
+    });
   }
 
   async load_video_file(file: File) {
@@ -110,12 +117,13 @@ export class ContextService {
     this.#subtitles.set([]);
     this.#waveform.set([]);
     this.#selectedSubtitleId.set(null);
-    this.#subtitleFileName.set(null);
+    this.#subtitleFile.set(null);
     this.#videoFileName.set(null);
     this.#currentTime.set(0);
     this.#selectionRange.set(null);
     this.#videoUrl.set(null);
     this.#waveformLoading.set(false);
+    this.#hasPendingChanges.set(false);
   }
 
   addNewSubtitle() {
@@ -210,7 +218,11 @@ export class ContextService {
         if (conditionFn(subAndId)) {
           return {
             ...subAndId,
-            subtitle: new Subtitle(Math.max(subAndId.subtitle.fromTime + msShift, 0), Math.max(subAndId.subtitle.toTime + msShift, 0), subAndId.subtitle.text),
+            subtitle: new Subtitle(
+              Math.max(subAndId.subtitle.fromTime + msShift, 0),
+              Math.max(subAndId.subtitle.toTime + msShift, 0),
+              subAndId.subtitle.text,
+            ),
           };
         }
         return subAndId;
@@ -327,5 +339,48 @@ export class ContextService {
       parseInt(s, 10) * 1_000 +
       parseInt(ms, 10)
     );
+  }
+
+  saveToLocalStorage() {
+    if (this.subtitles().length === 0) return;
+
+    const dataToSave = JSON.stringify(this.subtitles());
+    localStorage.setItem('srt_autosave_data', dataToSave);
+
+    if (this.subtitleFileName()) {
+      localStorage.setItem('srt_autosave_filename', this.subtitleFileName()!);
+    }
+
+    // Reset the flag since changes are now saved
+    this.#hasPendingChanges.set(false);
+    console.log('Auto-saved to localStorage');
+  }
+
+  downloadSrtFile() {
+    if (this.subtitles().length === 0) return;
+
+    const srtContent = this.subtitles()
+      .map((subAndId, index) => this.#formatSrt(index + 1, subAndId.subtitle))
+      .join('');
+
+    const fileName = this.subtitleFileName() || 'subtitles.srt';
+
+    const blob = new Blob([srtContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+
+    window.URL.revokeObjectURL(url);
+
+    // Reset the flag since the user explicitly downloaded the file
+    this.#hasPendingChanges.set(false);
+  }
+
+  #formatSrt(idx: number, sub: Subtitle): string {
+    const timestamps = `${this.#formatMs.transform(sub.toTime, ',')} --> ${this.#formatMs.transform(sub.toTime, ',')}`;
+    return `${idx}\n${timestamps}\n${sub.text}\n\n`;
   }
 }
