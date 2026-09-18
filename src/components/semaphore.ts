@@ -28,7 +28,7 @@ import { ContextService } from './context.service';
       }
 
       .centered-chip {
-        width: 3vw !important;
+        width: 72px !important;
         height: 24px !important;
         min-height: 24px !important;
         border: none !important; /* Removes standard borders */
@@ -84,8 +84,8 @@ export class SemaphoreComponent {
       OPTIMAL: '#447855', // Deep moss green
       SLOW: '#446785', // Deep denim/slate blue
     };
-    let color = this.context.isDarkMode() ? darkModeColors[speed] : lightModeColors[speed];
-    return color;
+
+    return this.context.isDarkMode() ? darkModeColors[speed] : lightModeColors[speed];
   });
 
   tooltip = computed(() => {
@@ -95,7 +95,7 @@ export class SemaphoreComponent {
       TOO_FAST: 'Too fast',
       FAST: 'Fast',
       FLASH: 'Flash',
-      OPTIMAL: 'Optimal',
+      OPTIMAL: 'Ok',
       SLOW: 'Slow',
     };
     return tooltip[speed];
