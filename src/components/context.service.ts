@@ -26,6 +26,7 @@ export class ContextService {
   #shiftMode = signal<ShiftMode>('THIS');
   #isInitialLoad = false;
   #hasPendingChanges = signal<boolean>(false);
+  #playForever = signal<boolean>(false);
 
   subtitles = this.#subtitles.asReadonly();
   waveform = this.#waveform.asReadonly();
@@ -42,11 +43,27 @@ export class ContextService {
   isDarkMode = this.#isDarkMode.asReadonly();
   shiftMode = this.#shiftMode.asReadonly();
   hasPendingChanges = this.#hasPendingChanges.asReadonly();
+  playForever = this.#playForever.asReadonly();
 
   selectedSubtitle = computed(() => {
     const id = this.selectedSubtitleId();
     if (id === null) return null;
     return this.subtitles().find((s) => s.id === id) ?? null;
+  });
+
+  playbackBoundary = computed(() => {
+    if (this.selectedSubtitle()) {
+      return {
+        start: this.selectedSubtitle()!.subtitle.fromTime,
+        end: this.selectedSubtitle()!.subtitle.toTime,
+      };
+    } else if (this.selectionRange()) {
+      return {
+        start: this.selectionRange()!.start,
+        end: this.selectionRange()!.end,
+      };
+    }
+    return null;
   });
 
   constructor() {
@@ -258,8 +275,15 @@ export class ContextService {
     this.#isPlaying.set(true);
   }
 
+  playSelection() {
+    if(!this.playbackBoundary()) return;
+    this.setCurrentTime(this.playbackBoundary()!.start);
+    this.#isPlaying.set(true);
+  }
+
   pause() {
     this.#isPlaying.set(false);
+    this.#playForever.set(false);
   }
 
   toggleDarkMode() {
@@ -382,5 +406,10 @@ export class ContextService {
   #formatSrt(idx: number, sub: Subtitle): string {
     const timestamps = `${this.#formatMs.transform(sub.toTime, ',')} --> ${this.#formatMs.transform(sub.toTime, ',')}`;
     return `${idx}\n${timestamps}\n${sub.text}\n\n`;
+  }
+
+  playSelectionForever() {
+    this.#playForever.set(true);
+    this.playSelection()
   }
 }

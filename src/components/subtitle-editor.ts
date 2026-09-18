@@ -199,7 +199,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
       <div class="button-group group">
         <div class="sub-label">Player controls</div>
-        <div>
+        <div class="grid-container">
           <button
             matIconButton
             class="material-btn"
@@ -215,6 +215,22 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
             [disabled]="!context.videoFileName()"
           >
             <span class="material-symbols-outlined">pause</span>
+          </button>
+          <button
+            matIconButton
+            class="material-btn"
+            (click)="context.playSelection()"
+            [disabled]="!context.playbackBoundary()"
+          >
+            <span class="material-symbols-outlined">looks_one</span>
+          </button>
+          <button
+            matIconButton
+            class="material-btn"
+            (click)="context.playSelectionForever()"
+            [disabled]="!context.playbackBoundary()"
+          >
+            <span class="material-symbols-outlined">repeat_one</span>
           </button>
         </div>
       </div>
@@ -233,8 +249,8 @@ export class SubtitleEditorComponent {
   constructor() {
     effect(() => {
       let currentSub = this.context.selectedSubtitle();
-      let subInput = this.subtitleInput()
-      if(currentSub && subInput) {
+      let subInput = this.subtitleInput();
+      if (currentSub && subInput) {
         subInput.nativeElement.focus();
       }
     });

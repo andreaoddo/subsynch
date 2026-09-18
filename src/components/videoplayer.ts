@@ -148,16 +148,38 @@ export class VideoplayerComponent {
     this.stopTracking();
   }
 
+  onNativePlayOnce(): void {
+    if(!this.context.playbackBoundary) return;
+
+    this.context.playSelection();
+  }
+
   startTracking(): void {
     const loop = () => {
       const video = this.videoPlayer()?.nativeElement;
       if (video && !video.paused) {
-        this.context.setCurrentTime(video.currentTime * 1000);
+        const currentMs = video.currentTime * 1000;
+
+        // Check for the temporary boundary instead of the global selection
+        const boundary = this.context.playbackBoundary();
+
+        if (boundary && currentMs >= boundary.end) {
+          if(this.context.playForever()) {
+            video.currentTime = boundary.start / 1000;
+            this.context.setCurrentTime(boundary.start);
+          } else {
+            video.currentTime = boundary.end / 1000;
+            this.context.setCurrentTime(boundary.end);
+            this.context.pause();
+            return;
+          }
+        }
+
+        this.context.setCurrentTime(currentMs);
         this.animationFrameId = requestAnimationFrame(loop);
       }
     };
 
-    // Cancel any existing loop just in case, then start a new one
     this.stopTracking();
     this.animationFrameId = requestAnimationFrame(loop);
   }
