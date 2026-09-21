@@ -1,7 +1,5 @@
 import { Component, input, computed, inject } from '@angular/core';
 import { SubtitleSpeed } from './dto';
-import { MatIconButton } from '@angular/material/button';
-import { MatTooltip } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { ContextService } from './context.service';
 
@@ -11,12 +9,6 @@ import { ContextService } from './context.service';
     <mat-chip class="centered-chip" label-text-size="20" [style.background-color]="this.color()">{{
       this.tooltip()
     }}</mat-chip>
-
-    <!--    <button matIconButton class="material-btn no-disc-button" [matTooltip]="this.tooltip()" matTooltipPosition="after" disableRipple>-->
-    <!--      <span class="material-symbols-outlined" [style.color]="this.color()">-->
-    <!--        radio_button_checked-->
-    <!--      </span>-->
-    <!--    </button>-->
   `,
   styles: [
     `
@@ -60,7 +52,7 @@ import { ContextService } from './context.service';
       }
     `,
   ],
-  imports: [MatIconButton, MatTooltip, MatChipsModule],
+  imports: [MatChipsModule],
 })
 export class SemaphoreComponent {
   speed = input<SubtitleSpeed | null>();

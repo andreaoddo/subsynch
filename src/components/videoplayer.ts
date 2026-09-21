@@ -1,12 +1,11 @@
 import { Component, effect, ElementRef, inject, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ContextService } from './context.service';
-import { MatIconButton } from '@angular/material/button';
 
 @Component({
   selector: 'app-video-player',
   standalone: true,
-  imports: [CommonModule, MatIconButton],
+  imports: [CommonModule],
   template: `
     @if (this.context.videoUrl()) {
       <div class="video-wrapper">

@@ -2,11 +2,9 @@ import { Component, computed, inject, effect, viewChild, ElementRef } from '@ang
 import { MatFormField, MatInput, MatLabel } from '@angular/material/input';
 import { ContextService } from './context.service';
 import { ReactiveFormsModule } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatRadioModule } from '@angular/material/radio';
-import { MatToolbar } from '@angular/material/toolbar';
 import { MatIconButton } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
@@ -18,11 +16,9 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
     MatInput,
     ReactiveFormsModule,
     MatLabel,
-    MatButton,
     MatTooltip,
     MatSliderModule,
     MatRadioModule,
-    MatToolbar,
     MatIconButton,
     MatButtonToggleModule,
   ],
