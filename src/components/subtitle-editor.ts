@@ -191,9 +191,15 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
           [value]="context.shiftMode()"
           (change)="context.updateShiftMode($event.value)"
         >
-          <mat-button-toggle value="THIS">This</mat-button-toggle>
-          <mat-button-toggle value="TO_END">To end</mat-button-toggle>
-          <mat-button-toggle value="ALL">All</mat-button-toggle>
+          <mat-button-toggle value="THIS" matTooltip="This">
+            <span class="material-symbols-outlined">timer_1</span>
+          </mat-button-toggle>
+          <mat-button-toggle value="TO_END" matTooltip="To end">
+            <span class="material-symbols-outlined">text_select_jump_to_end</span>
+          </mat-button-toggle>
+          <mat-button-toggle value="ALL" matTooltip="All"
+            ><span class="material-symbols-outlined">select_all</span></mat-button-toggle
+          >
         </mat-button-toggle-group>
       </div>
 
