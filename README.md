@@ -10,3 +10,16 @@ Subsynch is an Angular-based web application designed for the creation, editing,
 * **Batch Time-Shifting:** Apply bulk time offsets to resynchronize entire subtitle tracks for different video releases.
 * **Legibility Analysis:** Built-in metrics to evaluate if subtitles are too fast, too slow, or perfectly timed for optimal reading speed.
 * **Format Support:** Fully supports SubRip (`.srt`) files, with architecture in place to support additional formats in the future.
+
+## TODOs
+### Features
+- [ ] Key bindings
+- [ ] Subtitle file creation
+- [ ] Moving `moov` block at beginning of video files if necessary
+- [ ] Notepad mode
+- [ ] Support for WebVTT (.vtt) subtitles
+- [ ] Support for Advanced Substation Alpha (.ass) subtitles
+
+### Fixes
+- [ ] Deselect subtitles by clicking on waveform
+- [ ] Avoid waveform scrolling on subtitle limit dragging
